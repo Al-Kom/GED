@@ -1,2 +1,2 @@
-# GEd
+# GED
 Graph Editor
