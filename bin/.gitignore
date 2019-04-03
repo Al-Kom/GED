@@ -1,3 +1,5 @@
-/GraphEditorGUI$DrawPanel$Node.class
-/GraphEditorGUI$DrawPanel$Line.class
-/GraphEditorGUI$DrawPanel$Node$NodeListener.class
+/GraphEditorGUI$DrawPanel$GraphNode$NodeListener.class
+/GraphEditorGUI$DrawPanel$GraphNode.class
+/GraphNode.class
+/GraphNode$NodeListener.class
+/GraphLine.class
