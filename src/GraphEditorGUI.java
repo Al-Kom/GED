@@ -13,7 +13,6 @@ import java.awt.event.*;
  */
 public class GraphEditorGUI {
 	String curOperation = "";
-	ArrayList<JButton> leftButtons;
 	DrawPanel drawPanel;
 	public void run() {
 		JFrame frame = new JFrame("GraphEditor");
@@ -62,7 +61,7 @@ public class GraphEditorGUI {
 		leftPanel.add( new ImagePanel("sources/logo.jpg"));	
 			//left buttons
 		JPanel buttonPanel = new JPanel( new GridLayout(3,1));
-		leftButtons = new ArrayList<JButton>();
+		ArrayList<JButton> leftButtons = new ArrayList<JButton>();
 		for(int i=0;i<3;i++) {
 			leftButtons.add( new JButton( new ImageIcon(buttonImagesSource[i])));
 			leftButtons.get(i).setName(operationNames[i]);
@@ -87,7 +86,6 @@ public class GraphEditorGUI {
 			curOperation = cur.getName();
 			System.out.println(curOperation);
 			drawPanel.firstLineNode = null;
-			drawPanel.moveNode = null;
 		}
 	}
 	
@@ -109,7 +107,8 @@ public class GraphEditorGUI {
 		ArrayList<GraphNode> nodes;
 		GraphNode firstLineNode;
 		GraphNode selectedNode;
-		GraphNode moveNode;
+		GraphLine selectedLine;
+		
 		public DrawPanel() {
 			addMouseListener(this);
 			setBackground(Color.WHITE);
@@ -122,9 +121,9 @@ public class GraphEditorGUI {
 
 		public void paintComponent(Graphics g) {
 			g.clearRect(0, 0, getWidth(), getHeight());
-			
-			g.setColor(Color.BLACK);
 			for(GraphLine l : lines) {
+				g.drawString(l.ID, l.getIDx(), l.getIDy());
+				g.setColor(l.myColor);
 				g.drawLine(l.first.X+10, l.first.Y+10, l.second.X+10, l.second.Y+10);
 			}
 		}
@@ -136,7 +135,37 @@ public class GraphEditorGUI {
 				nodes.add(b);
 				add(b);
 				repaint();
+	    	} else if(curOperation.equals("select")) {
+    			if(selectedLine!=null) {
+	    			selectedLine.myColor = Color.BLACK;	    				
+    			}
+	    		Point clickedPoint = new Point(e.getX(),e.getY());
+	    		GraphLine newSelectedLine = findLineForPoint(clickedPoint);
+	    		if(newSelectedLine != null) {
+	    			System.out.println("select line");
+	    			selectedLine = newSelectedLine;
+	    			selectedLine.myColor = Color.ORANGE;
+	    		}
+				repaint();
 	    	}
+	    }
+	    
+	    private GraphLine findLineForPoint(Point p) {
+	    	GraphLine foundLine = null;
+	    	int sl = 10;		//shifting line from borders to center of node
+			int delta = 5;		//maximal distance between click-point and line
+			
+	    	for(GraphLine l : lines) {
+	    		Rectangle r = new Rectangle(p.x - delta, p.y - delta,
+	    									delta*2, delta*2);
+	    		if(r.intersectsLine(l.first.X + sl, l.first.Y + sl,
+	    							l.second.X + sl, l.second.Y + sl)) {
+					foundLine = l;
+					break;
+	    		}	    		
+	    	}
+
+	    	return foundLine;
 	    }
 	    
 		public void mousePressed(MouseEvent e) {

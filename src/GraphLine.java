@@ -1,39 +1,28 @@
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.Color;
 
-public class GraphLine implements MouseListener {
+public class GraphLine {
 
 	public GraphNode first;
 	public GraphNode second;
+	public Color myColor;	
+	public String ID;
 		
 	public GraphLine(GraphNode f, GraphNode s) {
 			first = f;
 			second = s;
+			myColor = Color.BLACK;
+			ID = "";
 	}
 	
-	public void mouseClicked(MouseEvent e) {
-		// TODO Auto-generated method stub
-
+	public void setColor(Color clr) {
+		myColor = clr;
 	}
 
-	public void mousePressed(MouseEvent e) {
-		// TODO Auto-generated method stub
-
+	public int getIDx() {
+		return (first.X + second.X)/2;
 	}
-
-	public void mouseReleased(MouseEvent e) {
-		// TODO Auto-generated method stub
-
+	
+	public int getIDy() {
+		return (first.Y + second.Y)/2;
 	}
-
-	public void mouseEntered(MouseEvent e) {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void mouseExited(MouseEvent e) {
-		// TODO Auto-generated method stub
-
-	}
-
 }

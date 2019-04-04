@@ -26,7 +26,7 @@ public class GraphNode extends JComponent implements MouseInputListener {
 		ID = new JTextField("" + X + "." + Y);
 		ID.setEditable(false);
 		motherPanel.add(ID);
-		//System.out.println("new node at " + X + "," + Y);
+		//System.out.println("new NODE at " + X + "," + Y);
 		
 		nodeColor = Color.BLUE;
 	}
@@ -48,11 +48,11 @@ public class GraphNode extends JComponent implements MouseInputListener {
 			//if line
 			if(motherPanel.firstLineNode==null) {
 				motherPanel.firstLineNode = clickedNode;
-				//System.out.println(">>from " + clickedNode.X + "." + clickedNode.Y);
+				//System.out.println(">>new LINE from " + clickedNode.X + "." + clickedNode.Y);
 			} else {
 				GraphLine l = new GraphLine(motherPanel.firstLineNode, clickedNode);
 				motherPanel.lines.add(l);
-				//System.out.println("<<to " + clickedNode.X + "." + clickedNode.Y);
+				//System.out.println("<<new LINE to " + clickedNode.X + "." + clickedNode.Y);
 				motherPanel.repaint();
 				motherPanel.firstLineNode = null;
 			}
