@@ -26,9 +26,8 @@ public class GraphNode extends JComponent implements MouseInputListener {
 		ID = new JTextField("" + X + "." + Y);
 		ID.setEditable(false);
 		motherPanel.add(ID);
-		//System.out.println("new NODE at " + X + "," + Y);
-		
 		nodeColor = Color.BLUE;
+		//System.out.println("new NODE at " + X + "," + Y);
 	}
 	
 	public void paintComponent(Graphics g) {
@@ -39,6 +38,15 @@ public class GraphNode extends JComponent implements MouseInputListener {
 		g.fillOval(0, 0, 20, 20);
 		
 		ID.setBounds(X+20, Y+20, ID.getText().length()*8, 20);
+		//change borders of motherPanel if need
+		if((this.getX() + 20 + ID.getWidth()) > motherPanel.getWidth()) {
+			motherPanel.setPreferredSize( new Dimension(motherPanel.getWidth() + 20,
+					motherPanel.getHeight()));
+		}
+		if((this.getY() + 20 + ID.getHeight()) > motherPanel.getHeight()) {
+			motherPanel.setPreferredSize( new Dimension(motherPanel.getWidth(), 
+					motherPanel.getHeight() + 20));
+		}
 		motherPanel.repaint();
 	}
 	
@@ -92,7 +100,6 @@ public class GraphNode extends JComponent implements MouseInputListener {
 		if(motherGUI.curOperation.equals("select")) {
 			isDragged = false;
 			//System.out.println("-->to " + X + "." + Y);
-			motherPanel.repaint();
 		}
 		
 	}
@@ -104,6 +111,14 @@ public class GraphNode extends JComponent implements MouseInputListener {
 			//System.out.println("DRAG to " + X + "." + Y);
 			motherPanel.repaint();
 		}
+	}
+	
+	public void setID(String id) {
+		ID.setText(id);
+	}
+	
+	public String getID() {
+		return ID.getText();
 	}
 	
 	public void mouseEntered(MouseEvent e) {

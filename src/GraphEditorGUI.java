@@ -6,10 +6,7 @@ import java.awt.event.*;
  * TODO 
  * 
  * -change button: just change cartoon
- * 
- * -JComponent GraphNode
- * https://stackoverflow.com/questions/423950/rounded-swing-jbutton-using-java
- * -JComponent GraphLine
+ * -repair scroll for drawPanel
  */
 public class GraphEditorGUI {
 	String curOperation = "";
@@ -22,7 +19,10 @@ public class GraphEditorGUI {
 		frame.setJMenuBar(menuBar);
 			//central panel for drawing
 		drawPanel = new DrawPanel();
-		frame.getContentPane().add(BorderLayout.CENTER, drawPanel);
+		JScrollPane drawPanelScroller = new JScrollPane(drawPanel);
+		drawPanelScroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+		drawPanelScroller.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		frame.getContentPane().add(BorderLayout.CENTER, drawPanelScroller);
 			//left panel for buttons and logo
 		JPanel leftPanel = getLeftPanel();
 		frame.getContentPane().add(BorderLayout.WEST, leftPanel);
@@ -114,7 +114,7 @@ public class GraphEditorGUI {
 			setBackground(Color.WHITE);
 			setLayout(null);
 			setToolTipText("DrawPanel");
-			
+			this.setPreferredSize(new Dimension(650,500));
 			nodes = new ArrayList<GraphNode>();
 			lines = new ArrayList<GraphLine>();
 		}
@@ -122,8 +122,8 @@ public class GraphEditorGUI {
 		public void paintComponent(Graphics g) {
 			g.clearRect(0, 0, getWidth(), getHeight());
 			for(GraphLine l : lines) {
-				g.drawString(l.ID, l.getIDx(), l.getIDy());
-				g.setColor(l.myColor);
+				g.drawString(l.getID(), l.getIDx(), l.getIDy());
+				g.setColor(l.getColor());
 				g.drawLine(l.first.X+10, l.first.Y+10, l.second.X+10, l.second.Y+10);
 			}
 		}
@@ -137,14 +137,14 @@ public class GraphEditorGUI {
 				repaint();
 	    	} else if(curOperation.equals("select")) {
     			if(selectedLine!=null) {
-	    			selectedLine.myColor = Color.BLACK;	    				
+	    			selectedLine.setColor(Color.BLACK);	    				
     			}
 	    		Point clickedPoint = new Point(e.getX(),e.getY());
 	    		GraphLine newSelectedLine = findLineForPoint(clickedPoint);
 	    		if(newSelectedLine != null) {
 	    			System.out.println("select line");
 	    			selectedLine = newSelectedLine;
-	    			selectedLine.myColor = Color.ORANGE;
+	    			selectedLine.setColor(Color.ORANGE);
 	    		}
 				repaint();
 	    	}
@@ -159,7 +159,7 @@ public class GraphEditorGUI {
 	    		Rectangle r = new Rectangle(p.x - delta, p.y - delta,
 	    									delta*2, delta*2);
 	    		if(r.intersectsLine(l.first.X + sl, l.first.Y + sl,
-	    							l.second.X + sl, l.second.Y + sl)) {
+	    					l.second.X + sl, l.second.Y + sl)) {
 					foundLine = l;
 					break;
 	    		}	    		

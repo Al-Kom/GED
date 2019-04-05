@@ -4,8 +4,8 @@ public class GraphLine {
 
 	public GraphNode first;
 	public GraphNode second;
-	public Color myColor;	
-	public String ID;
+	private Color myColor;	
+	private String ID;
 		
 	public GraphLine(GraphNode f, GraphNode s) {
 			first = f;
@@ -16,6 +16,18 @@ public class GraphLine {
 	
 	public void setColor(Color clr) {
 		myColor = clr;
+	}
+	
+	public Color getColor() {
+		return myColor;
+	}
+	
+	public void setID(String id) {
+		ID = id;
+	}
+	
+	public String getID() {
+		return ID;
 	}
 
 	public int getIDx() {
