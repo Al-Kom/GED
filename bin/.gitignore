@@ -3,3 +3,10 @@
 /GraphNode.class
 /GraphNode$NodeListener.class
 /GraphLine.class
+/GraphEditorGUI$SaveMenuListener.class
+/GraphEditorGUI$LoadMenuListener.class
+/GraphEditorGUI$OpenMenuListener.class
+/GraphEditorGUI$NewMenuListener.class
+/GraphEditorGUI$EditIDMenuListener.class
+/GraphEditorGUI$RemoveMenuListener.class
+/Graph.class

@@ -4,22 +4,43 @@ public class GraphLine {
 
 	public GraphNode first;
 	public GraphNode second;
-	private Color myColor;	
+	private Color curColor;
+	private Color firstColor;
+	private Color secondColor;
 	private String ID;
 		
 	public GraphLine(GraphNode f, GraphNode s) {
 			first = f;
 			second = s;
-			myColor = Color.BLACK;
+			firstColor = Color.BLACK;
+			secondColor = Color.ORANGE;
+			curColor = firstColor;
 			ID = "";
+	//System.out.println("new LINE");
+	}
+
+	public void setCurColor(Color clr) {
+		curColor = clr;
 	}
 	
-	public void setColor(Color clr) {
-		myColor = clr;
+	public Color getCurColor() {
+		return curColor;
+	}
+
+	public void setFirstColor(Color clr) {
+		firstColor = clr;
 	}
 	
-	public Color getColor() {
-		return myColor;
+	public Color getFirstColor() {
+		return firstColor;
+	}
+
+	public void setSecondColor(Color clr) {
+		secondColor = clr;
+	}
+	
+	public Color getSecondColor() {
+		return secondColor;
 	}
 	
 	public void setID(String id) {
@@ -31,10 +52,10 @@ public class GraphLine {
 	}
 
 	public int getIDx() {
-		return (first.X + second.X)/2;
+		return (first.getX() + second.getX())/2 + 5;
 	}
 	
 	public int getIDy() {
-		return (first.Y + second.Y)/2;
+		return (first.getY() + second.getY())/2 + 5;
 	}
 }
