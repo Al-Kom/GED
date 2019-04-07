@@ -10,3 +10,7 @@
 /GraphEditorGUI$EditIDMenuListener.class
 /GraphEditorGUI$RemoveMenuListener.class
 /Graph.class
+/GraphEditorGUI$Task4MenuListener.class
+/GraphEditorGUI$Task4EndNodeMenuListener.class
+/GraphEditorGUI$Task4StartNodeMenuListener.class
+/GraphEditorGUI$Task4RunMenuListener.class

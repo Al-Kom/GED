@@ -1,5 +1,8 @@
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.swing.*;
 
 import java.awt.event.*;
@@ -18,6 +21,9 @@ public class GraphEditorGUI {
 	ArrayList<GraphNode> nodes;
 	String curOperation = "";
 	DrawPanel drawPanel;
+	//task
+	GraphNode task4StartNode;
+	GraphNode task4EndNode;
 	
 	public void run() {
 		frame = new JFrame("GraphEditor");
@@ -42,24 +48,35 @@ public class GraphEditorGUI {
 	private JMenuBar getStandartMenuBar() {
 		JMenuBar menuBar = new JMenuBar();
 		JMenu fileMenu = new JMenu("File");
+		JMenu editMenu = new JMenu("Manage");
+		JMenu task4Menu = new JMenu("Task4");
 		JMenuItem newMenuItem = new JMenuItem("New");
 		JMenuItem saveMenuItem = new JMenuItem("Save");
 		JMenuItem openMenuItem = new JMenuItem("Open");
+		JMenuItem editIDMenuItem = new JMenuItem("Edit ID");
+		JMenuItem removeMenuItem = new JMenuItem("Remove");
+		JMenuItem task4RunMenuItem = new JMenuItem("Run task");
+		JMenuItem task4StartNodeMenuItem = new JMenuItem("Set start node");
+		JMenuItem task4EndNodeMenuItem = new JMenuItem("Set end node");
 		newMenuItem.addActionListener( new NewMenuListener());
 		saveMenuItem.addActionListener( new SaveMenuListener());
 		openMenuItem.addActionListener( new OpenMenuListener());
+		editIDMenuItem.addActionListener( new EditIDMenuListener());
+		removeMenuItem.addActionListener( new RemoveMenuListener());
+		task4RunMenuItem.addActionListener( new Task4RunMenuListener());
+		task4StartNodeMenuItem.addActionListener( new Task4StartNodeMenuListener());
+		task4EndNodeMenuItem.addActionListener( new Task4EndNodeMenuListener());
 		fileMenu.add(newMenuItem);
 		fileMenu.add(saveMenuItem);
 		fileMenu.add(openMenuItem);
-		menuBar.add(fileMenu);
-		JMenu editMenu = new JMenu("Manage");
-		JMenuItem editIDMenuItem = new JMenuItem("Edit ID");
-		JMenuItem removeMenuItem = new JMenuItem("Remove");
-		editIDMenuItem.addActionListener( new EditIDMenuListener());
-		removeMenuItem.addActionListener( new RemoveMenuListener());
 		editMenu.add(editIDMenuItem);
 		editMenu.add(removeMenuItem);
+		task4Menu.add(task4RunMenuItem);
+		task4Menu.add(task4StartNodeMenuItem);
+		task4Menu.add(task4EndNodeMenuItem);
+		menuBar.add(fileMenu);
 		menuBar.add(editMenu);
+		menuBar.add(task4Menu);
 		return menuBar;
 	}
 	
@@ -231,6 +248,140 @@ public class GraphEditorGUI {
 			drawPanel.repaint();
 		}
 	}
+
+	private class Task4StartNodeMenuListener implements ActionListener {
+		public void actionPerformed(ActionEvent e) {
+			task4StartNode = selectedNode;
+		}
+	}
+
+	private class Task4EndNodeMenuListener implements ActionListener {
+		public void actionPerformed(ActionEvent e) {
+			task4EndNode = selectedNode;
+		}
+	}
+	
+	private class Task4RunMenuListener implements ActionListener {
+		public void actionPerformed(ActionEvent e) {
+			if(task4StartNode == null) {
+				JOptionPane.showMessageDialog(frame, "start node is not selected!");
+				return;
+			}
+			if(task4EndNode == null) {
+				JOptionPane.showMessageDialog(frame, "end node is not selected!");
+				return;
+			}
+			String start = task4StartNode.getID() + "(" + task4StartNode.getX()
+					+ "," + task4StartNode.getY() + ")";
+			String end = task4EndNode.getID() + "(" + task4EndNode.getX()
+					+ "," + task4EndNode.getY() + ")";
+			String task4 = "Найти в графе все возможные пути, не пересекающиеся" +
+					" по вершинам, между двумя вершинами:\n" + start +
+					" и " + end;
+			JOptionPane.showMessageDialog(frame, task4);
+			ArrayList<GraphNode> notSteped = new ArrayList<GraphNode>(nodes);
+			notSteped.remove(task4StartNode);
+			ArrayList<GraphNode> way = null;
+			while((way = task4(notSteped)) != null) {
+				for(GraphNode n : way) {
+					notSteped.remove(n);
+				}
+				notSteped.add(task4EndNode);
+				System.out.println("new notSteped: ");
+				for(GraphNode n : notSteped) {
+					System.out.println("	" + n.getID());					
+				}
+			}
+			JOptionPane.showMessageDialog(frame, "done");
+		}
+	}
+	
+	private ArrayList<GraphNode> task4(ArrayList<GraphNode> nS) {
+		ArrayList<GraphNode> notSteped = new ArrayList<GraphNode>(nS);
+		ArrayList<GraphNode> resultWay = new ArrayList<GraphNode>();
+		HashMap<GraphNode,Integer> stepMap = new HashMap<GraphNode,Integer>();
+		for(GraphNode n : nodes) {
+			stepMap.put(n, -1);
+		}
+		stepMap.replace(task4StartNode, 0);
+		stepMap.replace(task4EndNode, nodes.size());
+		
+		ArrayList<GraphNode> newWave = null;
+		ArrayList<GraphNode> curWave = new ArrayList<GraphNode>();
+		curWave.add(task4StartNode);
+		
+		int curTime = 0;
+		boolean wayFounded = false;
+		while(!curWave.isEmpty() && !wayFounded) {
+			if(curTime>10) System.exit(curTime);
+			newWave = new ArrayList<GraphNode>();
+			for(GraphNode curNode : curWave) {
+				for(GraphLine l : lines) {
+					//find incident nodes
+					GraphNode incidentCurNode = null;
+					if(l.first.equals(curNode)) {
+						incidentCurNode = l.second;
+					} else if(l.second.equals(curNode)) {
+						incidentCurNode = l.first;						
+					}
+					//if incident node founded 
+					if(incidentCurNode != null) {
+						if(incidentCurNode.equals(task4EndNode)) {
+							//if it end node
+							newWave.add(incidentCurNode);
+							wayFounded = true;
+							break;
+						} else if(notSteped.contains(incidentCurNode)) {
+							//add to newWave
+							newWave.add(incidentCurNode);
+							notSteped.remove(incidentCurNode);
+						}
+					}
+				}
+				if(wayFounded) {
+					break;
+				}
+			}//for(GraphNode curNode : curWave)
+			curTime++;
+			//mark wave number for nodes in newWave
+			//replace newWave->curWave
+			System.out.println("Time: " + curTime + " new wave: ");
+			if(!newWave.isEmpty()) {
+				for(GraphNode n : newWave) {
+					stepMap.replace(n, curTime);
+					System.out.println("	" + n.getID());
+				}
+			}
+			System.out.println("hmm-" + newWave.size() + "," + newWave.isEmpty());
+			curWave = newWave;
+			newWave = null;
+		}
+		if(wayFounded) {
+			resultWay.add(task4EndNode);
+			GraphNode curNode = task4EndNode;
+			System.out.println("back way: ");
+			while(curNode != task4StartNode) {
+				for(GraphLine l : lines) {
+					if(l.first.equals(curNode) && (stepMap.get(curNode) ==
+											stepMap.get(l.second) + 1)) {
+						resultWay.add(l.second);
+						curNode = l.second;						
+						break;
+					} else if(l.second.equals(curNode) &&(stepMap.get(curNode) == 
+													stepMap.get(l.first) + 1)) {
+						resultWay.add(l.first);
+						curNode = l.first;						
+						break;
+					}
+				}
+				System.out.println("	" + curNode.getID());
+			}//adding nodes to result way
+		}
+		if(resultWay.isEmpty()) {
+			resultWay = null;
+		}
+		return resultWay;
+	}
 	
 	private JPanel getLeftPanel() {
 		
@@ -327,7 +478,8 @@ public class GraphEditorGUI {
 				repaint();
 	    	} else if(curOperation.equals("select")) {
     			if(selectedLine!=null) {
-	    			selectedLine.setCurColor(selectedLine.getFirstColor());	    				
+	    			selectedLine.setCurColor(selectedLine.getFirstColor());
+	    			selectedLine = null;
     			}
 	    		Point clickedPoint = new Point(e.getX(),e.getY());
 	    		GraphLine newSelectedLine = findLineForPoint(clickedPoint);
