@@ -9,7 +9,7 @@ import java.awt.event.*;
 import java.io.*;
 /*
  * TODO 
- * -task
+ * -repair scroller (exit over borders of drawPanel)
  */
 public class GraphEditorGUI {
 	GraphNode firstLineNode;
@@ -21,6 +21,7 @@ public class GraphEditorGUI {
 	ArrayList<GraphNode> nodes;
 	String curOperation = "";
 	DrawPanel drawPanel;
+	JScrollPane drawPanelScroller;
 	//task
 	GraphNode task4StartNode;
 	GraphNode task4EndNode;
@@ -33,7 +34,7 @@ public class GraphEditorGUI {
 		frame.setJMenuBar(menuBar);
 			//central panel for drawing
 		drawPanel = new DrawPanel();
-		JScrollPane drawPanelScroller = new JScrollPane(drawPanel);
+		drawPanelScroller = new JScrollPane(drawPanel);
 		drawPanelScroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
 		drawPanelScroller.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		frame.getContentPane().add(BorderLayout.CENTER, drawPanelScroller);
@@ -279,27 +280,72 @@ public class GraphEditorGUI {
 					" по вершинам, между двумя вершинами:\n" + start +
 					" и " + end;
 			JOptionPane.showMessageDialog(frame, task4);
+			
+			task4StartNode.setFirstColor(Color.WHITE);
+			task4StartNode.setCurColor(task4StartNode.getFirstColor());
+			task4EndNode.setFirstColor(Color.BLACK);
+			task4EndNode.setCurColor(task4EndNode.getFirstColor());
+			
+			sleepAndRepaint(500);
+
+			String taskAccount = "Found ways:";
 			ArrayList<GraphNode> notSteped = new ArrayList<GraphNode>(nodes);
 			notSteped.remove(task4StartNode);
 			ArrayList<GraphNode> way = null;
+			ArrayList<GraphNode> prevWay = new ArrayList<GraphNode>();
 			while((way = task4(notSteped)) != null) {
+				if(prevWay.equals(way)) {
+					break;
+				}
+				prevWay = way;
+				
+				String sWay = new String();
 				for(GraphNode n : way) {
 					notSteped.remove(n);
+					sWay += n.getID();
 				}
-				notSteped.add(task4EndNode);
-				System.out.println("new notSteped: ");
+				sWay = new StringBuffer(sWay).reverse().toString();
+				taskAccount += "\n" + sWay;
+				
 				for(GraphNode n : notSteped) {
-					System.out.println("	" + n.getID());					
+					n.setFirstColor(Color.BLUE);
+					n.setCurColor(n.getFirstColor());
 				}
+				
+				notSteped.add(task4EndNode);
+				task4EndNode.setFirstColor(Color.BLACK);
+				task4EndNode.setCurColor(task4EndNode.getFirstColor());
+				sleepAndRepaint(500);
 			}
-			JOptionPane.showMessageDialog(frame, "done");
+			if(taskAccount.equals("Found ways:")) {
+				taskAccount += "\nno ways found";
+			}
+			JOptionPane.showMessageDialog(frame, taskAccount);
+			for(GraphNode n : nodes) {
+				n.setFirstColor(Color.BLUE);
+				n.setSecondColor(Color.RED);
+			}
+			for(GraphLine l : lines) {
+				l.setFirstColor(Color.BLACK);
+				l.setSecondColor(Color.YELLOW);
+			}
+		}
+	}
+	
+	private void sleepAndRepaint(long time) {
+		try {
+			drawPanel.paint(drawPanel.getGraphics());
+			Thread.sleep(time);
+		} catch (InterruptedException ie) {
+			ie.printStackTrace();
 		}
 	}
 	
 	private ArrayList<GraphNode> task4(ArrayList<GraphNode> nS) {
 		ArrayList<GraphNode> notSteped = new ArrayList<GraphNode>(nS);
 		ArrayList<GraphNode> resultWay = new ArrayList<GraphNode>();
-		HashMap<GraphNode,Integer> stepMap = new HashMap<GraphNode,Integer>();
+		
+		Map<GraphNode,Integer> stepMap = new HashMap<GraphNode,Integer>();
 		for(GraphNode n : nodes) {
 			stepMap.put(n, -1);
 		}
@@ -313,10 +359,25 @@ public class GraphEditorGUI {
 		int curTime = 0;
 		boolean wayFounded = false;
 		while(!curWave.isEmpty() && !wayFounded) {
-			if(curTime>10) System.exit(curTime);
+			
+			for(GraphNode n : curWave) {
+				n.setFirstColor(Color.ORANGE);
+				n.setCurColor(n.getFirstColor());
+			}
+			sleepAndRepaint(500);
+			
 			newWave = new ArrayList<GraphNode>();
+			
 			for(GraphNode curNode : curWave) {
+				//node selecting
+				curNode.setCurColor(curNode.getSecondColor());
+				sleepAndRepaint(500);
+				
 				for(GraphLine l : lines) {
+					//line selecting
+					l.setCurColor(l.getSecondColor());
+					sleepAndRepaint(500);
+					
 					//find incident nodes
 					GraphNode incidentCurNode = null;
 					if(l.first.equals(curNode)) {
@@ -326,55 +387,78 @@ public class GraphEditorGUI {
 					}
 					//if incident node founded 
 					if(incidentCurNode != null) {
-						if(incidentCurNode.equals(task4EndNode)) {
-							//if it end node
-							newWave.add(incidentCurNode);
-							wayFounded = true;
-							break;
-						} else if(notSteped.contains(incidentCurNode)) {
+						if(notSteped.contains(incidentCurNode)) {
+							incidentCurNode.setCurColor(Color.YELLOW);
+							sleepAndRepaint(500);
+
 							//add to newWave
 							newWave.add(incidentCurNode);
 							notSteped.remove(incidentCurNode);
+
+							//if it end node
+							if(incidentCurNode.equals(task4EndNode)) {
+								wayFounded = true;
+								break;
+							}							
 						}
 					}
+					//disable line selecting
+					l.setCurColor(l.getFirstColor());
+					sleepAndRepaint(500);
 				}
+				//disable node selecting
+				curNode.setCurColor(curNode.getFirstColor());
+				sleepAndRepaint(500);
 				if(wayFounded) {
 					break;
 				}
 			}//for(GraphNode curNode : curWave)
 			curTime++;
 			//mark wave number for nodes in newWave
-			//replace newWave->curWave
-			System.out.println("Time: " + curTime + " new wave: ");
 			if(!newWave.isEmpty()) {
 				for(GraphNode n : newWave) {
 					stepMap.replace(n, curTime);
-					System.out.println("	" + n.getID());
+					n.setFirstColor(Color.ORANGE);
+					n.setCurColor(n.getFirstColor());
+					
 				}
 			}
-			System.out.println("hmm-" + newWave.size() + "," + newWave.isEmpty());
+			//add newWave->curWave
 			curWave = newWave;
+			//repaint added to curWave nodes
+			sleepAndRepaint(500);
 			newWave = null;
 		}
+		//back away to mark the way
 		if(wayFounded) {
 			resultWay.add(task4EndNode);
 			GraphNode curNode = task4EndNode;
-			System.out.println("back way: ");
+			curNode.setCurColor(Color.GREEN);
+			sleepAndRepaint(500);
 			while(curNode != task4StartNode) {
 				for(GraphLine l : lines) {
 					if(l.first.equals(curNode) && (stepMap.get(curNode) ==
 											stepMap.get(l.second) + 1)) {
 						resultWay.add(l.second);
-						curNode = l.second;						
+						curNode = l.second;
+						l.setFirstColor(Color.GREEN);
+						l.setCurColor(l.getFirstColor());
+						curNode.setFirstColor(Color.GREEN);
+						curNode.setCurColor(curNode.getFirstColor());
+						sleepAndRepaint(500);				
 						break;
 					} else if(l.second.equals(curNode) &&(stepMap.get(curNode) == 
 													stepMap.get(l.first) + 1)) {
 						resultWay.add(l.first);
-						curNode = l.first;						
+						curNode = l.first;
+						l.setFirstColor(Color.GREEN);
+						l.setCurColor(l.getFirstColor());
+						curNode.setFirstColor(Color.GREEN);
+						curNode.setCurColor(curNode.getFirstColor());
+						sleepAndRepaint(500);				
 						break;
 					}
 				}
-				System.out.println("	" + curNode.getID());
 			}//adding nodes to result way
 		}
 		if(resultWay.isEmpty()) {
@@ -445,12 +529,14 @@ public class GraphEditorGUI {
 			setBackground(Color.WHITE);
 			setLayout(null);
 			setToolTipText("DrawPanel");
-			this.setPreferredSize(new Dimension(650,500));
+			this.setPreferredSize(new Dimension(500,400));
 			nodes = new ArrayList<GraphNode>();
 			lines = new ArrayList<GraphLine>();
 		}
 
 		public void paintComponent(Graphics g) {
+			//g.setClip(getX(), getY(), getWidth(), getHeight());
+			g.setColor(Color.WHITE);
 			g.clearRect(0, 0, getWidth(), getHeight());
 			for(GraphLine l : lines) {
 				g.setColor(l.getCurColor());
@@ -467,6 +553,7 @@ public class GraphEditorGUI {
 				g.drawLine(firstLineNode.getX() + 10, firstLineNode.getY() + 10,
 									curLineEndPos.x, curLineEndPos.y);
 			} else curLineEndPos = null;
+			drawPanelScroller.updateUI();
 		}
 		
 	    public void mouseClicked(MouseEvent e) {

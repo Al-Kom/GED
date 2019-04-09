@@ -40,7 +40,6 @@ public class GraphNode extends JComponent implements MouseInputListener {
 		//change borders of motherPanel if need
 		checkBorders();
 		motherPanel.repaint();
-		
 	}
 	
 	private void checkBorders( ) {
@@ -123,7 +122,7 @@ public class GraphNode extends JComponent implements MouseInputListener {
 			X = X + e.getX() - dX;
 			Y = Y + e.getY() - dY;
 	//System.out.println("DRAG to " + X + "." + Y);
-			motherPanel.repaint();
+			repaint();
 		}
 	}
 
