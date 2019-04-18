@@ -9,7 +9,7 @@ import java.awt.event.*;
 import java.io.*;
 /*
  * TODO 
- * -repair scroller (exit over borders of drawPanel)
+ * -add other tasks
  */
 public class GraphEditorGUI {
 	GraphNode firstLineNode;
@@ -23,8 +23,8 @@ public class GraphEditorGUI {
 	DrawPanel drawPanel;
 	JScrollPane drawPanelScroller;
 	//task
-	GraphNode task4StartNode;
-	GraphNode task4EndNode;
+	GraphNode taskStartNode;
+	GraphNode taskEndNode;
 	
 	public void run() {
 		frame = new JFrame("GraphEditor");
@@ -50,31 +50,31 @@ public class GraphEditorGUI {
 		JMenuBar menuBar = new JMenuBar();
 		JMenu fileMenu = new JMenu("File");
 		JMenu editMenu = new JMenu("Manage");
-		JMenu task4Menu = new JMenu("Task4");
+		JMenu task4Menu = new JMenu("Tasks");
 		JMenuItem newMenuItem = new JMenuItem("New");
 		JMenuItem saveMenuItem = new JMenuItem("Save");
 		JMenuItem openMenuItem = new JMenuItem("Open");
 		JMenuItem editIDMenuItem = new JMenuItem("Edit ID");
 		JMenuItem removeMenuItem = new JMenuItem("Remove");
-		JMenuItem task4RunMenuItem = new JMenuItem("Run task");
-		JMenuItem task4StartNodeMenuItem = new JMenuItem("Set start node");
-		JMenuItem task4EndNodeMenuItem = new JMenuItem("Set end node");
+		JMenuItem findAllWaysMenuItem = new JMenuItem("Run task");
+		JMenuItem taskStartNodeMenuItem = new JMenuItem("Set start node");
+		JMenuItem taskEndNodeMenuItem = new JMenuItem("Set end node");
 		newMenuItem.addActionListener( new NewMenuListener());
 		saveMenuItem.addActionListener( new SaveMenuListener());
 		openMenuItem.addActionListener( new OpenMenuListener());
 		editIDMenuItem.addActionListener( new EditIDMenuListener());
 		removeMenuItem.addActionListener( new RemoveMenuListener());
-		task4RunMenuItem.addActionListener( new Task4RunMenuListener());
-		task4StartNodeMenuItem.addActionListener( new Task4StartNodeMenuListener());
-		task4EndNodeMenuItem.addActionListener( new Task4EndNodeMenuListener());
+		findAllWaysMenuItem.addActionListener( new FindAllWaysMenuListener());
+		taskStartNodeMenuItem.addActionListener( new TasksStartNodeMenuListener());
+		taskEndNodeMenuItem.addActionListener( new TasksEndNodeMenuListener());
 		fileMenu.add(newMenuItem);
 		fileMenu.add(saveMenuItem);
 		fileMenu.add(openMenuItem);
 		editMenu.add(editIDMenuItem);
 		editMenu.add(removeMenuItem);
-		task4Menu.add(task4RunMenuItem);
-		task4Menu.add(task4StartNodeMenuItem);
-		task4Menu.add(task4EndNodeMenuItem);
+		task4Menu.add(findAllWaysMenuItem);
+		task4Menu.add(taskStartNodeMenuItem);
+		task4Menu.add(taskEndNodeMenuItem);
 		menuBar.add(fileMenu);
 		menuBar.add(editMenu);
 		menuBar.add(task4Menu);
@@ -110,7 +110,7 @@ public class GraphEditorGUI {
 	private void saveGraphToFile(File file) {
 		try {
 			BufferedWriter writer = new BufferedWriter(new FileWriter(file + ".txt"));
-			writer.write(nodes.size() + "nodes, " + lines.size() + "lines\n");
+			writer.write(nodes.size() + " nodes, " + lines.size() + " lines\n");
 			writer.write("nodes:\n");
 			for(GraphNode n : nodes) {
 				writer.write(n.getX() + "," + n.getY() + "," + n.getID() + "\n");
@@ -250,47 +250,47 @@ public class GraphEditorGUI {
 		}
 	}
 
-	private class Task4StartNodeMenuListener implements ActionListener {
+	private class TasksStartNodeMenuListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
-			task4StartNode = selectedNode;
+			taskStartNode = selectedNode;
 		}
 	}
 
-	private class Task4EndNodeMenuListener implements ActionListener {
+	private class TasksEndNodeMenuListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
-			task4EndNode = selectedNode;
+			taskEndNode = selectedNode;
 		}
 	}
 	
-	private class Task4RunMenuListener implements ActionListener {
+	private class FindAllWaysMenuListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
-			if(task4StartNode == null) {
+			if(taskStartNode == null) {
 				JOptionPane.showMessageDialog(frame, "start node is not selected!");
 				return;
 			}
-			if(task4EndNode == null) {
+			if(taskEndNode == null) {
 				JOptionPane.showMessageDialog(frame, "end node is not selected!");
 				return;
 			}
-			String start = task4StartNode.getID() + "(" + task4StartNode.getX()
-					+ "," + task4StartNode.getY() + ")";
-			String end = task4EndNode.getID() + "(" + task4EndNode.getX()
-					+ "," + task4EndNode.getY() + ")";
+			String start = taskStartNode.getID() + "(" + taskStartNode.getX()
+					+ "," + taskStartNode.getY() + ")";
+			String end = taskEndNode.getID() + "(" + taskEndNode.getX()
+					+ "," + taskEndNode.getY() + ")";
 			String task4 = "Найти в графе все возможные пути, не пересекающиеся" +
 					" по вершинам, между двумя вершинами:\n" + start +
 					" и " + end;
 			JOptionPane.showMessageDialog(frame, task4);
 			
-			task4StartNode.setFirstColor(Color.WHITE);
-			task4StartNode.setCurColor(task4StartNode.getFirstColor());
-			task4EndNode.setFirstColor(Color.BLACK);
-			task4EndNode.setCurColor(task4EndNode.getFirstColor());
+			taskStartNode.setFirstColor(Color.WHITE);
+			taskStartNode.setCurColor(taskStartNode.getFirstColor());
+			taskEndNode.setFirstColor(Color.BLACK);
+			taskEndNode.setCurColor(taskEndNode.getFirstColor());
 			
 			sleepAndRepaint(500);
 
 			String taskAccount = "Found ways:";
 			ArrayList<GraphNode> notSteped = new ArrayList<GraphNode>(nodes);
-			notSteped.remove(task4StartNode);
+			notSteped.remove(taskStartNode);
 			ArrayList<GraphNode> way = null;
 			ArrayList<GraphNode> prevWay = new ArrayList<GraphNode>();
 			while((way = task4(notSteped)) != null) {
@@ -312,9 +312,9 @@ public class GraphEditorGUI {
 					n.setCurColor(n.getFirstColor());
 				}
 				
-				notSteped.add(task4EndNode);
-				task4EndNode.setFirstColor(Color.BLACK);
-				task4EndNode.setCurColor(task4EndNode.getFirstColor());
+				notSteped.add(taskEndNode);
+				taskEndNode.setFirstColor(Color.BLACK);
+				taskEndNode.setCurColor(taskEndNode.getFirstColor());
 				sleepAndRepaint(500);
 			}
 			if(taskAccount.equals("Found ways:")) {
@@ -349,12 +349,12 @@ public class GraphEditorGUI {
 		for(GraphNode n : nodes) {
 			stepMap.put(n, -1);
 		}
-		stepMap.replace(task4StartNode, 0);
-		stepMap.replace(task4EndNode, nodes.size());
+		stepMap.replace(taskStartNode, 0);
+		stepMap.replace(taskEndNode, nodes.size());
 		
 		ArrayList<GraphNode> newWave = null;
 		ArrayList<GraphNode> curWave = new ArrayList<GraphNode>();
-		curWave.add(task4StartNode);
+		curWave.add(taskStartNode);
 		
 		int curTime = 0;
 		boolean wayFounded = false;
@@ -396,7 +396,7 @@ public class GraphEditorGUI {
 							notSteped.remove(incidentCurNode);
 
 							//if it end node
-							if(incidentCurNode.equals(task4EndNode)) {
+							if(incidentCurNode.equals(taskEndNode)) {
 								wayFounded = true;
 								break;
 							}							
@@ -431,11 +431,11 @@ public class GraphEditorGUI {
 		}
 		//back away to mark the way
 		if(wayFounded) {
-			resultWay.add(task4EndNode);
-			GraphNode curNode = task4EndNode;
+			resultWay.add(taskEndNode);
+			GraphNode curNode = taskEndNode;
 			curNode.setCurColor(Color.GREEN);
 			sleepAndRepaint(500);
-			while(curNode != task4StartNode) {
+			while(curNode != taskStartNode) {
 				for(GraphLine l : lines) {
 					if(l.first.equals(curNode) && (stepMap.get(curNode) ==
 											stepMap.get(l.second) + 1)) {
@@ -528,16 +528,39 @@ public class GraphEditorGUI {
 			addMouseMotionListener(this);
 			setBackground(Color.WHITE);
 			setLayout(null);
-			setToolTipText("DrawPanel");
 			this.setPreferredSize(new Dimension(500,400));
 			nodes = new ArrayList<GraphNode>();
 			lines = new ArrayList<GraphLine>();
 		}
 
 		public void paintComponent(Graphics g) {
-			//g.setClip(getX(), getY(), getWidth(), getHeight());
 			g.setColor(Color.WHITE);
 			g.clearRect(0, 0, getWidth(), getHeight());
+			
+			boolean outOfTheBorders = true;
+			while(outOfTheBorders) {
+				outOfTheBorders = false;
+				for(GraphNode n : nodes) {
+					int addX = Math.min(n.getX(), 0);
+					int addY = Math.min(n.getY(), 0);
+					if( (addX < 0) || (addY < 0) ) {
+						this.shiftBorders(-addX, -addY);
+						Rectangle viewFocus = new Rectangle(n.getX(), n.getY(),
+								n.getWidth(), n.getHeight());
+						n.scrollRectToVisible(viewFocus);
+					}
+					int addWidth = Math.max(this.getWidth(), n.getX() +
+							Math.max(n.getWidth()*2, n.getID().length()));
+					int addHeight = Math.max(this.getHeight(), n.getY() +
+							n.getHeight()*2);
+					if( (addWidth > this.getWidth()) ||
+						(addHeight > this.getHeight())) {
+						Dimension newSize = new Dimension(addWidth,	addHeight);
+						this.setPreferredSize(newSize);
+					}
+				}
+			}
+			
 			for(GraphLine l : lines) {
 				g.setColor(l.getCurColor());
 				g.drawString(l.getID(), l.getIDx(), l.getIDy());
@@ -551,9 +574,21 @@ public class GraphEditorGUI {
 			if(firstLineNode != null && curLineEndPos != null) {
 				g.setColor(Color.MAGENTA);
 				g.drawLine(firstLineNode.getX() + 10, firstLineNode.getY() + 10,
-									curLineEndPos.x, curLineEndPos.y);
+						curLineEndPos.x, curLineEndPos.y);
 			} else curLineEndPos = null;
 			drawPanelScroller.updateUI();
+		}
+		
+		private void shiftBorders(int dx, int dy) {
+			if(dx == 0 && dy == 0)
+				return;
+			Dimension newSize = new Dimension(dx + this.getWidth(),
+					dy + this.getHeight());
+			this.setPreferredSize(newSize);
+			for(GraphNode n : nodes) {
+				n.setX(dx + n.getX());
+				n.setY(dy + n.getY());
+			}
 		}
 		
 	    public void mouseClicked(MouseEvent e) {

@@ -10,8 +10,8 @@ public class GraphNode extends JComponent implements MouseInputListener {
 	private Color firstColor;
 	private Color secondColor;
 	private String ID;
-	GraphEditorGUI motherGUI;
-	GraphEditorGUI.DrawPanel motherPanel;
+	private GraphEditorGUI motherGUI;
+	private GraphEditorGUI.DrawPanel motherPanel;
 	private boolean isDragged;
 	private int dX;
 	private int dY;
@@ -26,8 +26,9 @@ public class GraphNode extends JComponent implements MouseInputListener {
 		secondColor = Color.RED;
 		curColor = firstColor;
 		setBounds(X, Y, 100, 50);
-		this.addMouseListener( this);
-		this.addMouseMotionListener( this);
+		addMouseListener( this);
+		addMouseMotionListener( this);
+		setAutoscrolls(true);
 	//System.out.println("new NODE at " + X + "," + Y);
 	}
 	
@@ -37,32 +38,8 @@ public class GraphNode extends JComponent implements MouseInputListener {
 		g.clearRect(0, 0, 20, 20);
 		g.setColor(curColor);
 		g.fillOval(0, 0, 20, 20);
-		//change borders of motherPanel if need
-		checkBorders();
 		motherPanel.repaint();
 	}
-	
-	private void checkBorders( ) {
-		int rightBorder = Math.max(getX() + ID.length(), getX() + 20);
-		int leftBorder = getX();
-		int upBorder = getY() - 20;
-		int downBorder = getY() + 20;
-		if(rightBorder + 20 > motherPanel.getWidth()){
-			motherPanel.setPreferredSize( new Dimension((int)rightBorder + 20,
-													motherPanel.getHeight()));
-		}
-		if(leftBorder < 0) {
-			motherPanel.setBounds(-20, 0, motherPanel.getWidth(), motherPanel.getHeight());
-		}
-		if(upBorder < 0) {
-			motherPanel.setBounds(0, -20, motherPanel.getWidth(), motherPanel.getHeight());
-		}
-		if(downBorder + 20 > motherPanel.getHeight()){
-			motherPanel.setPreferredSize( new Dimension(motherPanel.getWidth(),
-														(int)downBorder + 20));
-		}
-	}
-	
 	public void mouseClicked(MouseEvent e) {
 		GraphNode clickedNode = (GraphNode) e.getSource();
 		if(motherGUI.curOperation.equals("line")) {
@@ -122,10 +99,20 @@ public class GraphNode extends JComponent implements MouseInputListener {
 			X = X + e.getX() - dX;
 			Y = Y + e.getY() - dY;
 	//System.out.println("DRAG to " + X + "." + Y);
+			Rectangle r = new Rectangle(e.getX(), e.getY(), getWidth(), getHeight());
+			scrollRectToVisible(r);
 			repaint();
 		}
 	}
 
+	public void setX(int x) {
+		X = x;
+	}
+	
+	public void setY(int y) {
+		Y = y;
+	}
+	
 	public void setID(String id) {
 		ID = id;
 	}
