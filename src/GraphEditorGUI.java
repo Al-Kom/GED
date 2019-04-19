@@ -537,30 +537,6 @@ public class GraphEditorGUI {
 			g.setColor(Color.WHITE);
 			g.clearRect(0, 0, getWidth(), getHeight());
 			
-			boolean outOfTheBorders = true;
-			while(outOfTheBorders) {
-				outOfTheBorders = false;
-				for(GraphNode n : nodes) {
-					int addX = Math.min(n.getX(), 0);
-					int addY = Math.min(n.getY(), 0);
-					if( (addX < 0) || (addY < 0) ) {
-						this.shiftBorders(-addX, -addY);
-						Rectangle viewFocus = new Rectangle(n.getX(), n.getY(),
-								n.getWidth(), n.getHeight());
-						n.scrollRectToVisible(viewFocus);
-					}
-					int addWidth = Math.max(this.getWidth(), n.getX() +
-							Math.max(n.getWidth()*2, n.getID().length()));
-					int addHeight = Math.max(this.getHeight(), n.getY() +
-							n.getHeight()*2);
-					if( (addWidth > this.getWidth()) ||
-						(addHeight > this.getHeight())) {
-						Dimension newSize = new Dimension(addWidth,	addHeight);
-						this.setPreferredSize(newSize);
-					}
-				}
-			}
-			
 			for(GraphLine l : lines) {
 				g.setColor(l.getCurColor());
 				g.drawString(l.getID(), l.getIDx(), l.getIDy());
@@ -578,19 +554,7 @@ public class GraphEditorGUI {
 			} else curLineEndPos = null;
 			drawPanelScroller.updateUI();
 		}
-		
-		private void shiftBorders(int dx, int dy) {
-			if(dx == 0 && dy == 0)
-				return;
-			Dimension newSize = new Dimension(dx + this.getWidth(),
-					dy + this.getHeight());
-			this.setPreferredSize(newSize);
-			for(GraphNode n : nodes) {
-				n.setX(dx + n.getX());
-				n.setY(dy + n.getY());
-			}
-		}
-		
+			
 	    public void mouseClicked(MouseEvent e) {
 			//System.out.println("click on " + e.getX() + "," + e.getY());
 	    	if(curOperation.equals("node")) {

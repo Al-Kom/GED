@@ -38,6 +38,16 @@ public class GraphNode extends JComponent implements MouseInputListener {
 		g.clearRect(0, 0, 20, 20);
 		g.setColor(curColor);
 		g.fillOval(0, 0, 20, 20);
+		
+		int addWidth = Math.max(motherPanel.getWidth(), getX() +
+				Math.max(getWidth()*2, getID().length()));
+		int addHeight = Math.max(motherPanel.getHeight(), getY() +
+				getHeight()*2);
+		if( (addWidth > motherPanel.getWidth()) ||
+			(addHeight > motherPanel.getHeight())) {
+			Dimension newSize = new Dimension(addWidth,	addHeight);
+			motherPanel.setPreferredSize(newSize);
+		}
 		motherPanel.repaint();
 	}
 	public void mouseClicked(MouseEvent e) {
@@ -96,8 +106,8 @@ public class GraphNode extends JComponent implements MouseInputListener {
 
 	public void mouseDragged(MouseEvent e) {
 		if(isDragged) {
-			X = X + e.getX() - dX;
-			Y = Y + e.getY() - dY;
+			X = Math.max(X + e.getX() - dX, 0);
+			Y = Math.max(Y + e.getY() - dY, 0);
 	//System.out.println("DRAG to " + X + "." + Y);
 			Rectangle r = new Rectangle(e.getX(), e.getY(), getWidth(), getHeight());
 			scrollRectToVisible(r);
