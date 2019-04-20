@@ -25,6 +25,13 @@ public class GraphNode extends JComponent implements MouseInputListener {
 		firstColor = Color.BLUE;
 		secondColor = Color.RED;
 		curColor = firstColor;
+		int addWidth = Math.max(motherPanel.getWidth(), X + 40);
+		int addHeight = Math.max(motherPanel.getHeight(), Y + 40);
+		if( (addWidth > motherPanel.getWidth()) ||
+			(addHeight > motherPanel.getHeight())) {
+			Dimension newSize = new Dimension(addWidth,	addHeight);
+			motherPanel.setPreferredSize(newSize);
+		}
 		setBounds(X, Y, 100, 50);
 		addMouseListener( this);
 		addMouseMotionListener( this);
@@ -33,12 +40,6 @@ public class GraphNode extends JComponent implements MouseInputListener {
 	}
 	
 	public void paintComponent(Graphics g) {
-		setBounds(X, Y, 20, 20);
-		
-		g.clearRect(0, 0, 20, 20);
-		g.setColor(curColor);
-		g.fillOval(0, 0, 20, 20);
-		
 		int addWidth = Math.max(motherPanel.getWidth(), getX() +
 				Math.max(getWidth()*2, getID().length()));
 		int addHeight = Math.max(motherPanel.getHeight(), getY() +
@@ -48,6 +49,12 @@ public class GraphNode extends JComponent implements MouseInputListener {
 			Dimension newSize = new Dimension(addWidth,	addHeight);
 			motherPanel.setPreferredSize(newSize);
 		}
+		setBounds(X, Y, 20, 20);
+		
+		g.clearRect(0, 0, 20, 20);
+		g.setColor(curColor);
+		g.fillOval(0, 0, 20, 20);
+		
 		motherPanel.repaint();
 	}
 	public void mouseClicked(MouseEvent e) {
