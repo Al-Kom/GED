@@ -7,7 +7,7 @@ public class GraphLine {
 	private Color curColor;
 	private Color firstColor;
 	private Color secondColor;
-	private String ID;
+	private int ID;
 		
 	public GraphLine(GraphNode f, GraphNode s) {
 			first = f;
@@ -15,7 +15,7 @@ public class GraphLine {
 			firstColor = Color.BLACK;
 			secondColor = Color.ORANGE;
 			curColor = firstColor;
-			ID = "";
+			ID = 0;
 	//System.out.println("new LINE");
 	}
 
@@ -43,11 +43,11 @@ public class GraphLine {
 		return secondColor;
 	}
 	
-	public void setID(String id) {
+	public void setID(int id) {
 		ID = id;
 	}
 	
-	public String getID() {
+	public int getID() {
 		return ID;
 	}
 

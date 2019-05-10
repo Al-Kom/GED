@@ -8,8 +8,10 @@ import javax.swing.*;
 import java.awt.event.*;
 import java.io.*;
 /*
- * TODO 
- * -add other tasks
+ * TODO
+ * -add task: output adjacency matrix, planarity
+ * -add task: searching Euler cycles
+ * -add task: making graph planar
  */
 public class GraphEditorGUI {
 	GraphNode firstLineNode;
@@ -25,6 +27,7 @@ public class GraphEditorGUI {
 	//task
 	GraphNode taskStartNode;
 	GraphNode taskEndNode;
+	double speedCoef = 1;
 	
 	public void run() {
 		frame = new JFrame("GraphEditor");
@@ -50,34 +53,42 @@ public class GraphEditorGUI {
 		JMenuBar menuBar = new JMenuBar();
 		JMenu fileMenu = new JMenu("File");
 		JMenu editMenu = new JMenu("Manage");
-		JMenu task4Menu = new JMenu("Tasks");
+		JMenu taskMenu = new JMenu("Tasks");
 		JMenuItem newMenuItem = new JMenuItem("New");
 		JMenuItem saveMenuItem = new JMenuItem("Save");
 		JMenuItem openMenuItem = new JMenuItem("Open");
 		JMenuItem editIDMenuItem = new JMenuItem("Edit ID");
 		JMenuItem removeMenuItem = new JMenuItem("Remove");
-		JMenuItem findAllWaysMenuItem = new JMenuItem("Run task");
 		JMenuItem taskStartNodeMenuItem = new JMenuItem("Set start node");
 		JMenuItem taskEndNodeMenuItem = new JMenuItem("Set end node");
+		JMenuItem findAllWaysMenuItem = 
+				new JMenuItem("Find all ways between start and end nodes");
+		JMenuItem getDistanceMenuItem =
+				new JMenuItem("Get distance between start and end nodes");
+		JMenuItem changeSpeedCoefMenuItem = new JMenuItem("Изменить скорость");
 		newMenuItem.addActionListener( new NewMenuListener());
 		saveMenuItem.addActionListener( new SaveMenuListener());
 		openMenuItem.addActionListener( new OpenMenuListener());
 		editIDMenuItem.addActionListener( new EditIDMenuListener());
 		removeMenuItem.addActionListener( new RemoveMenuListener());
-		findAllWaysMenuItem.addActionListener( new FindAllWaysMenuListener());
 		taskStartNodeMenuItem.addActionListener( new TasksStartNodeMenuListener());
 		taskEndNodeMenuItem.addActionListener( new TasksEndNodeMenuListener());
+		findAllWaysMenuItem.addActionListener( new FindAllWaysMenuListener());
+		getDistanceMenuItem.addActionListener( new TaskGetDistanceListener());
+		changeSpeedCoefMenuItem.addActionListener( new ChangeSpeedCoefListener());
 		fileMenu.add(newMenuItem);
 		fileMenu.add(saveMenuItem);
 		fileMenu.add(openMenuItem);
 		editMenu.add(editIDMenuItem);
 		editMenu.add(removeMenuItem);
-		task4Menu.add(findAllWaysMenuItem);
-		task4Menu.add(taskStartNodeMenuItem);
-		task4Menu.add(taskEndNodeMenuItem);
+		taskMenu.add(changeSpeedCoefMenuItem);
+		taskMenu.add(taskStartNodeMenuItem);
+		taskMenu.add(taskEndNodeMenuItem);
+		taskMenu.add(findAllWaysMenuItem);
+		taskMenu.add(getDistanceMenuItem);
 		menuBar.add(fileMenu);
 		menuBar.add(editMenu);
-		menuBar.add(task4Menu);
+		menuBar.add(taskMenu);
 		return menuBar;
 	}
 	
@@ -179,7 +190,7 @@ public class GraphEditorGUI {
 				}
 				GraphLine l = new GraphLine(n1, n2);
 				if(lineParams.length>4) {
-					l.setID(lineParams[4]);
+					l.setID(Integer.parseInt(lineParams[4]));
 				}
 				lines.add(l);
 			}
@@ -192,7 +203,7 @@ public class GraphEditorGUI {
 			System.out.println("can't load from file: " + file.getPath());
 			ex.printStackTrace();			
 		} catch (NumberFormatException ex) {
-			System.out.println("Error when parsing coordinate. " + ex.getLocalizedMessage());
+			System.out.println("Error when parsing coordinates or weight. " + ex.getLocalizedMessage());
 			return;
 		} catch (Exception ex) {
 			System.out.println(ex.getLocalizedMessage());
@@ -210,12 +221,16 @@ public class GraphEditorGUI {
 				}
 			}
 			//and a dialog window for selected line
-			if(selectedLine != null) {
-				String selectedLineID = JOptionPane.showInputDialog("Input "
-						+ "ID for the line");
-				if(selectedLineID != null) {
-					selectedLine.setID(selectedLineID);
+			try {
+				if(selectedLine != null) {
+					String selectedLineID = JOptionPane.showInputDialog("Input "
+							+ "ID for the line");
+					if(selectedLineID != null) {
+						selectedLine.setID(Integer.parseInt(selectedLineID));
+					}
 				}
+			} catch (NumberFormatException ex) {
+				System.out.println("Bad number for line ID");
 			}
 		}
 	}
@@ -250,6 +265,21 @@ public class GraphEditorGUI {
 		}
 	}
 
+	private class ChangeSpeedCoefListener implements ActionListener {
+		public void actionPerformed(ActionEvent e) {
+			try {
+				String enteredCoef = JOptionPane.showInputDialog("Увеличить скорость в "
+						+ "[x] раз");
+				if(enteredCoef != null)
+					speedCoef *= Double.parseDouble(enteredCoef);
+			} catch(NumberFormatException ex) {
+				System.out.println("Bad entered coefficient!");
+				ex.printStackTrace();
+			}
+		}
+		
+	}
+	
 	private class TasksStartNodeMenuListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
 			taskStartNode = selectedNode;
@@ -264,6 +294,7 @@ public class GraphEditorGUI {
 	
 	private class FindAllWaysMenuListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
+			selectedNode = null;
 			if(taskStartNode == null) {
 				JOptionPane.showMessageDialog(frame, "start node is not selected!");
 				return;
@@ -276,10 +307,10 @@ public class GraphEditorGUI {
 					+ "," + taskStartNode.getY() + ")";
 			String end = taskEndNode.getID() + "(" + taskEndNode.getX()
 					+ "," + taskEndNode.getY() + ")";
-			String task4 = "Найти в графе все возможные пути, не пересекающиеся" +
+			String taskName = "Найти в графе все возможные пути, не пересекающиеся" +
 					" по вершинам, между двумя вершинами:\n" + start +
 					" и " + end;
-			JOptionPane.showMessageDialog(frame, task4);
+			JOptionPane.showMessageDialog(frame, taskName);
 			
 			taskStartNode.setFirstColor(Color.WHITE);
 			taskStartNode.setCurColor(taskStartNode.getFirstColor());
@@ -289,11 +320,11 @@ public class GraphEditorGUI {
 			sleepAndRepaint(500);
 
 			String taskAccount = "Found ways:";
-			ArrayList<GraphNode> notSteped = new ArrayList<GraphNode>(nodes);
-			notSteped.remove(taskStartNode);
+			ArrayList<GraphNode> notStepped = new ArrayList<GraphNode>(nodes);
+			notStepped.remove(taskStartNode);
 			ArrayList<GraphNode> way = null;
 			ArrayList<GraphNode> prevWay = new ArrayList<GraphNode>();
-			while((way = task4(notSteped)) != null) {
+			while((way = findWayFromNodes(notStepped)) != null) {
 				if(prevWay.equals(way)) {
 					break;
 				}
@@ -301,18 +332,18 @@ public class GraphEditorGUI {
 				
 				String sWay = new String();
 				for(GraphNode n : way) {
-					notSteped.remove(n);
+					notStepped.remove(n);
 					sWay += n.getID();
 				}
 				sWay = new StringBuffer(sWay).reverse().toString();
 				taskAccount += "\n" + sWay;
 				
-				for(GraphNode n : notSteped) {
+				for(GraphNode n : notStepped) {
 					n.setFirstColor(Color.BLUE);
 					n.setCurColor(n.getFirstColor());
 				}
 				
-				notSteped.add(taskEndNode);
+				notStepped.add(taskEndNode);
 				taskEndNode.setFirstColor(Color.BLACK);
 				taskEndNode.setCurColor(taskEndNode.getFirstColor());
 				sleepAndRepaint(500);
@@ -331,18 +362,9 @@ public class GraphEditorGUI {
 			}
 		}
 	}
-	
-	private void sleepAndRepaint(long time) {
-		try {
-			drawPanel.paint(drawPanel.getGraphics());
-			Thread.sleep(time);
-		} catch (InterruptedException ie) {
-			ie.printStackTrace();
-		}
-	}
-	
-	private ArrayList<GraphNode> task4(ArrayList<GraphNode> nS) {
-		ArrayList<GraphNode> notSteped = new ArrayList<GraphNode>(nS);
+
+	private ArrayList<GraphNode> findWayFromNodes(ArrayList<GraphNode> nS) {
+		ArrayList<GraphNode> notStepped = new ArrayList<GraphNode>(nS);
 		ArrayList<GraphNode> resultWay = new ArrayList<GraphNode>();
 		
 		Map<GraphNode,Integer> stepMap = new HashMap<GraphNode,Integer>();
@@ -387,13 +409,13 @@ public class GraphEditorGUI {
 					}
 					//if incident node founded 
 					if(incidentCurNode != null) {
-						if(notSteped.contains(incidentCurNode)) {
+						if(notStepped.contains(incidentCurNode)) {
 							incidentCurNode.setCurColor(Color.YELLOW);
 							sleepAndRepaint(500);
 
 							//add to newWave
 							newWave.add(incidentCurNode);
-							notSteped.remove(incidentCurNode);
+							notStepped.remove(incidentCurNode);
 
 							//if it end node
 							if(incidentCurNode.equals(taskEndNode)) {
@@ -465,6 +487,159 @@ public class GraphEditorGUI {
 			resultWay = null;
 		}
 		return resultWay;
+	}
+	
+	private class TaskGetDistanceListener implements ActionListener {
+		public void actionPerformed(ActionEvent e) {
+			selectedNode = null;
+			if(taskStartNode == null) {
+				JOptionPane.showMessageDialog(frame, "start node is not selected!");
+				return;
+			}
+			if(taskEndNode == null) {
+				JOptionPane.showMessageDialog(frame, "end node is not selected!");
+				return;
+			}
+			String startNodeName = taskStartNode.getID() + "(" + 
+					taskStartNode.getX() + "," +
+					taskStartNode.getY() + ")";
+			String endNodeName = taskEndNode.getID() + "(" + taskEndNode.getX()
+					+ "," + taskEndNode.getY() + ")";
+			String taskName = "Определить расстояние между:\n" + startNodeName +
+					" и " + endNodeName;
+			JOptionPane.showMessageDialog(frame, taskName);
+
+			//find distance
+			int dist = findDistanceToAllNodes();
+			//dialog with answer
+			String taskAccount = "Расстояние между " + startNodeName +
+					" и " + endNodeName + ":\n";
+			if(dist != Integer.MAX_VALUE) {
+				taskAccount += String.valueOf(dist);
+			} else {
+				taskAccount += "между вершинами нет пути";
+			}
+			JOptionPane.showMessageDialog(frame, taskAccount);
+		}
+	}
+
+	private int findDistanceToAllNodes() {
+		//color mark for start and end nodes
+		taskStartNode.setCurColor(Color.WHITE);
+		taskEndNode.setCurColor(Color.BLACK);
+		sleepAndRepaint(500);
+		//save IDs
+		String nodesIDs[] = new String[nodes.size()];
+		for(int i = 0; i < nodes.size(); i++) {
+			nodesIDs[i] = nodes.get(i).getID();
+		}
+		//initializing algorithm
+			//set distance marks
+		for(int i = 0; i < nodes.size(); i++) {
+			nodes.get(i).setID(String.valueOf(Integer.MAX_VALUE));
+		}
+		taskStartNode.setID("0");
+			//create not stepped quantity
+		ArrayList<GraphNode> notStepped = new ArrayList<GraphNode>(nodes);
+		//enter recursive algorithm
+		minimizeNeighborDistance(notStepped);
+		//extract distance to end
+		int dist = Integer.MAX_VALUE;
+		try {
+			dist = Integer.parseInt(taskEndNode.getID());
+		} catch(NumberFormatException ex) {
+			System.out.println("Strange distance");
+		}
+		//return color marks 
+		for(GraphNode n : nodes) {
+			n.setCurColor(Color.BLUE);
+		}
+		for(GraphLine l : lines) {
+			l.setCurColor(l.getFirstColor());
+		}
+		//return IDs
+		for(int i = 0; i < nodes.size(); i++) {
+			nodes.get(i).setID(nodesIDs[i]);
+		}
+		sleepAndRepaint(300);
+		return dist;
+	}
+	
+	private void minimizeNeighborDistance(ArrayList<GraphNode> notStepped) {
+		try {
+			while(!notStepped.isEmpty()) {
+				//find node with minimal distance
+				GraphNode curNode = null;
+				int curNodeDist = Integer.MAX_VALUE;
+				for(GraphNode n:notStepped) {
+					if(curNode == null) {
+						curNode = n;
+						curNodeDist = Integer.parseInt(curNode.getID());
+					} else {
+						int nDist = Integer.parseInt(n.getID());
+						curNodeDist = Integer.parseInt(curNode.getID());
+						if(nDist < curNodeDist) {
+							curNode = n;
+							curNodeDist = Integer.parseInt(curNode.getID());			
+						}
+					}
+				}
+				//coloring current node
+//System.out.println("curNode: " + curNode.getID());
+				curNode.setCurColor(curNode.getSecondColor());
+				sleepAndRepaint(300);
+				//check distances of neighbors of current node
+				GraphNode nbor = null;
+				for(GraphLine line:lines) {
+					if(line.first.equals(curNode) && notStepped.contains(line.second)) {
+						nbor = line.second;
+					} else if(line.second.equals(curNode) && notStepped.contains(line.first)) {
+						nbor = line.first;
+					}
+					//if found neighbor
+					if(nbor != null) {
+						//coloring current line
+//System.out.println("--nbor: " + nbor.getID());
+						line.setCurColor(line.getSecondColor());
+						sleepAndRepaint(300);
+						//check distance
+						int curNborDist = Integer.parseInt(nbor.getID());
+						if(curNodeDist + line.getID() < curNborDist) {
+							nbor.setID(String.valueOf(curNodeDist + line.getID()));
+//System.out.println("--his new ID: " + nbor.getID());
+							sleepAndRepaint(300);
+						}
+						nbor = null;
+					}
+				}
+				//check connectedness
+					//check if not-checked-distance-nodes exist
+				String maxValue = String.valueOf(Integer.MAX_VALUE);
+				boolean goOn = false;
+				for(GraphNode n:notStepped) {
+					if(!n.getID().equals(maxValue) && !n.equals(curNode))
+						goOn = true;
+				}
+				if(!goOn)
+					break;
+				//mark (+coloring) current node as stepped
+//System.out.println("--curNode: " + curNode.getID());
+				notStepped.remove(curNode);
+				curNode.setCurColor(Color.MAGENTA);
+				sleepAndRepaint(500);
+			}
+		} catch(NumberFormatException ex) {
+			ex.printStackTrace();
+		}
+	}
+	
+	private void sleepAndRepaint(long time) {
+		try {
+			drawPanel.paint(drawPanel.getGraphics());
+			Thread.sleep((long)(time/speedCoef));
+		} catch (InterruptedException ie) {
+			ie.printStackTrace();
+		}
 	}
 	
 	private JPanel getLeftPanel() {
@@ -539,7 +714,7 @@ public class GraphEditorGUI {
 			
 			for(GraphLine l : lines) {
 				g.setColor(l.getCurColor());
-				g.drawString(l.getID(), l.getIDx(), l.getIDy());
+				g.drawString(String.valueOf(l.getID()), l.getIDx(), l.getIDy());
 				g.drawLine(l.first.getX()+10, l.first.getY()+10,
 						l.second.getX()+10, l.second.getY()+10);
 			}
@@ -563,10 +738,17 @@ public class GraphEditorGUI {
 				add(n);
 				repaint();
 	    	} else if(curOperation.equals("select")) {
+	    		//select-off selected node
+	    		if(selectedNode != null) {
+		    		selectedNode.setCurColor(selectedNode.getFirstColor());
+					selectedNode = null;
+	    		}
+	    		//select-off selected line
     			if(selectedLine!=null) {
 	    			selectedLine.setCurColor(selectedLine.getFirstColor());
 	    			selectedLine = null;
     			}
+    			//check if click on line
 	    		Point clickedPoint = new Point(e.getX(),e.getY());
 	    		GraphLine newSelectedLine = findLineForPoint(clickedPoint);
 	    		if(newSelectedLine != null) {
