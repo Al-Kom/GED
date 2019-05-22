@@ -9,9 +9,8 @@ import java.awt.event.*;
 import java.io.*;
 /*
  * TODO
- * -add task: output adjacency matrix, planarity
- * -add task: searching Euler cycles
- * -add task: making graph planar
+ * -add task: output planarity -- how?
+ * -add task: making graph planar -- how?
  */
 public class GraphEditorGUI {
 	GraphNode firstLineNode;
@@ -70,6 +69,7 @@ public class GraphEditorGUI {
 		JMenuItem getDistanceMenuItem =
 				new JMenuItem("Вычислить расстояние между начальной"
 						+ " и конечной вершинами");
+		JMenuItem findEilerCycleMenuItem = new JMenuItem("Найти эйлеров цикл");
 		JMenuItem changeSpeedCoefMenuItem =
 				new JMenuItem("Изменить скорость отображения");
 		newMenuItem.addActionListener( new NewMenuListener());
@@ -82,6 +82,7 @@ public class GraphEditorGUI {
 		taskEndNodeMenuItem.addActionListener( new TasksEndNodeMenuListener());
 		findAllWaysMenuItem.addActionListener( new FindAllWaysMenuListener());
 		getDistanceMenuItem.addActionListener( new TaskGetDistanceMenuListener());
+		findEilerCycleMenuItem.addActionListener( new FindEilerCycleMenuListener());
 		changeSpeedCoefMenuItem.addActionListener( new ChangeSpeedCoefMenuListener());
 		fileMenu.add(newMenuItem);
 		fileMenu.add(saveMenuItem);
@@ -94,6 +95,7 @@ public class GraphEditorGUI {
 		taskMenu.add(taskEndNodeMenuItem);
 		taskMenu.add(findAllWaysMenuItem);
 		taskMenu.add(getDistanceMenuItem);
+		taskMenu.add(findEilerCycleMenuItem);
 		menuBar.add(fileMenu);
 		menuBar.add(editMenu);
 		menuBar.add(taskMenu);
@@ -142,8 +144,10 @@ public class GraphEditorGUI {
 			}
 			writer.close();
 		} catch (IOException ex) {
-			System.out.println("can't save to file: " + file.getPath());
-			ex.printStackTrace();
+			JOptionPane.showMessageDialog(null,
+					"Can't save to file:\n" + file.getPath(),
+					"Error!",
+					JOptionPane.ERROR_MESSAGE);
 		}
 	}
 	
@@ -208,13 +212,20 @@ public class GraphEditorGUI {
 				n.repaint();
 			}
 		} catch (IOException ex) {
-			System.out.println("can't load from file: " + file.getPath());
-			ex.printStackTrace();			
+			JOptionPane.showMessageDialog(null,
+					"Can't load from file:\n" + file.getPath(),
+					"Error!",
+					JOptionPane.ERROR_MESSAGE);
 		} catch (NumberFormatException ex) {
-			System.out.println("Error when parsing coordinates or weight. " + ex.getLocalizedMessage());
-			return;
+			JOptionPane.showMessageDialog(null,
+					"Bad coordinate in file:\n" + file.getPath(),
+					"Error!",
+					JOptionPane.ERROR_MESSAGE);
 		} catch (Exception ex) {
-			System.out.println(ex.getLocalizedMessage());
+			JOptionPane.showMessageDialog(null,
+					ex.getLocalizedMessage(),
+					"Error!",
+					JOptionPane.ERROR_MESSAGE);
 		}
 	}
 	
@@ -248,7 +259,7 @@ public class GraphEditorGUI {
 				//output matrix
 				JOptionPane.showMessageDialog(
 						frame, 
-						nodesIDs + "\n" + outputMatrix,
+						"Матрица смежности:\n" + nodesIDs + "\n" + outputMatrix,
 						"Информация о графе",
 						JOptionPane.PLAIN_MESSAGE);
 			}
@@ -281,7 +292,10 @@ public class GraphEditorGUI {
 					}
 				}
 			} catch (NumberFormatException ex) {
-				System.out.println("Bad number for line ID");
+				JOptionPane.showMessageDialog(null,
+						"Bad number for line ID",
+						"Error!",
+						JOptionPane.ERROR_MESSAGE);
 			}
 		}
 	}
@@ -296,15 +310,13 @@ public class GraphEditorGUI {
 			//remove selected node
 			if(selectedNode != null) {
 				//remove lines that contains selected node
-				ArrayList<GraphLine> toRemove = new ArrayList<GraphLine>();
-				for(GraphLine l : lines) {
-					if(l.first.equals(selectedNode) ||
-							l.second.equals(selectedNode)) {
-						toRemove.add(l);
+				for(int i = 0; i< lines.size(); i++) {
+					if(lines.get(i).first.equals(selectedNode)
+						|| lines.get(i).second.equals(selectedNode)) {
+						lines.remove(i);
+						//go a step back after removing the element we stay on 
+						i--;
 					}
-				}
-				for(GraphLine l : toRemove) {
-					lines.remove(l);
 				}
 				
 				//remove node
@@ -324,8 +336,10 @@ public class GraphEditorGUI {
 				if(enteredCoef != null)
 					speedCoef *= Double.parseDouble(enteredCoef);
 			} catch(NumberFormatException ex) {
-				System.out.println("Bad entered coefficient!");
-				ex.printStackTrace();
+				JOptionPane.showMessageDialog(null,
+						"Bad entered coefficient",
+						"Error!",
+						JOptionPane.ERROR_MESSAGE);
 			}
 		}
 		
@@ -403,7 +417,7 @@ public class GraphEditorGUI {
 		//prepare graph and store IDs
 		nodesIDes = prepareGraphToTaskAndStoreNodesIDs();
 		//store lines
-		ArrayList<GraphLine> linesRecover = new ArrayList<GraphLine>(lines);
+		ArrayList<GraphLine> linesRecover = (ArrayList<GraphLine>)lines.clone();
 		//enter algorithm
 		Map<GraphNode,ArrayList<GraphLine>> stepMap;
 		while((stepMap = minimizeNeighborDistance(new ArrayList<GraphNode>(nodes)))
@@ -429,7 +443,6 @@ public class GraphEditorGUI {
 					postNode = null;
 				}
 			}
-System.out.println("++sWay: " + sWay);			
 			ways.add(sWay);
 		}
 		restoreGraph(nodesIDes, linesRecover);
@@ -481,7 +494,10 @@ System.out.println("++sWay: " + sWay);
 		try {
 			dist = Integer.parseInt(taskEndNode.getID());
 		} catch(NumberFormatException ex) {
-			System.out.println("Strange distance");
+			JOptionPane.showMessageDialog(null,
+					"Bad distance of [" + taskEndNode.getID() + "] node",
+					"Error!",
+					JOptionPane.ERROR_MESSAGE);
 		}
 		//return graph
 		restoreGraph(nodesIDs, lines);
@@ -489,7 +505,134 @@ System.out.println("++sWay: " + sWay);
 		return dist;
 	}
 
-	private String[] prepareGraphToTaskAndStoreNodesIDs() {
+	private class FindEilerCycleMenuListener implements ActionListener {
+		public void actionPerformed(ActionEvent e) {
+			String answer = "";
+			ArrayList<GraphNode> badGuys = findNonEvenNodes();
+			if(!badGuys.isEmpty()) {
+				answer += "Эйлеров цикл не найден из-за следующих\n"
+						+ "(нечетных или изолированных) вершин:";
+				for(GraphNode node:badGuys) {
+					answer += "\n        " + node.getID();
+				}
+			} else {
+				ArrayList<GraphNode> eCycle = findEilerCycle();
+				answer += "Найденный цикл:\n" + eCycle.get(0).getID();
+				for(int i = 1; i < eCycle.size(); i++) {
+					answer += "-" + eCycle.get(i).getID();
+				}
+			}
+			JOptionPane.showMessageDialog(null,
+					answer,
+					"Нахождение эйлерового цикла",
+					JOptionPane.PLAIN_MESSAGE);
+		}
+	}
+	
+	private ArrayList<GraphNode> findEilerCycle() {
+		ArrayList<GraphNode> answerList = new ArrayList<GraphNode>();
+		//store lines
+		ArrayList<GraphLine> linesStore = new ArrayList<GraphLine>(lines);
+		//init algo
+		answerList.add(nodes.get(0));
+		findAllCycles(nodes.get(0), answerList);
+		//restore lines
+		lines = linesStore;
+		sleepAndRepaint(0);
+		return answerList;
+	}
+
+	private void findAllCycles(GraphNode node, ArrayList<GraphNode> answerList) {
+		ArrayList<GraphNode> cycle = findCycle(node);
+		if(cycle.size() == 0) {
+			return;
+		} else {
+			answerList.addAll(answerList.indexOf(node), cycle);
+			cycle.remove(node);
+			for(GraphNode n:cycle) {
+				findAllCycles(n, answerList);
+			}
+		}
+	}
+	
+	private ArrayList<GraphNode> findCycle(GraphNode node) {
+		ArrayList<GraphNode> cycle = new ArrayList<GraphNode>();
+		ArrayList<GraphNode> notSteped = new ArrayList<GraphNode>(nodes);
+		//DFS (cycle is smth like 'ABCD' (and 'D' has edge with 'A'))
+		cycleDFS(node, notSteped, cycle);
+		
+		return cycle;
+	}
+
+	private void cycleDFS(GraphNode node, ArrayList<GraphNode> notSteped,
+			ArrayList<GraphNode> cycle) {
+		notSteped.remove(node);
+		cycle.add(node);
+		for(int i = 0; i < lines.size(); i++) {
+			if(lines.get(i).first.equals(node)) {
+				//if neighbor is cycle-starter
+				if(lines.get(i).second.equals(cycle.get(0))) {
+					lines.remove(lines.get(i)); //finish a parallel plan to remove cycle
+					return;
+				} else if(notSteped.contains(lines.get(i).second)) {
+					//if we haven't stepped yet on neighbor
+					GraphLine lineGoTo = lines.get(i);
+					lines.remove(lineGoTo); //no step back!
+					cycleDFS(lineGoTo.second, notSteped, cycle);
+					//chain of 'returns' move us back to return the founded cycle
+					return;
+				}
+			} else if(lines.get(i).second.equals(node)) {
+				//if neighbor is cycle-starter
+				if(lines.get(i).first.equals(cycle.get(0))) {
+					lines.remove(lines.get(i)); //finish a parallel plan to remove cycle
+					return;
+				} else if(notSteped.contains(lines.get(i).first)) {
+					//if we haven't stepped yet on neighbor
+					GraphLine lineGoTo = lines.get(i);
+					lines.remove(lineGoTo); //no step back!
+					cycleDFS(lineGoTo.first, notSteped, cycle);
+					//chain of 'returns' move us back to return the founded cycle
+					return;
+				}
+			}
+		}
+	}
+	
+	private ArrayList<GraphNode> findNonEvenNodes() {
+		ArrayList<GraphNode> badGuys = new ArrayList<GraphNode>();
+		for(GraphNode node:nodes) {
+			if(!isEvenOrAlone(node)) {
+				badGuys.add(node);
+			}
+		}
+		return badGuys;
+	}
+	
+
+	private boolean isEvenOrAlone(GraphNode node) {
+		int edgeNumber = 0;
+		for(GraphLine line:lines) {
+			if(line.first.equals(node) || line.second.equals(node))
+				edgeNumber++;
+		}
+		if(edgeNumber%2 == 0 && edgeNumber != 0)
+			return true;
+		else
+			return false;
+	}
+
+	private void cutNodeWithEdges(GraphNode node) {
+		for(int i = 0; i < lines.size(); i++) {
+			if(lines.get(i).first.equals(node) || lines.get(i).second.equals(node)) {
+				lines.remove(lines.get(i));
+				i--;	//go a step back after removing the element we stay on 
+			}
+		}
+		nodes.remove(node);
+	}
+	
+ 	private String[] prepareGraphToTaskAndStoreNodesIDs() {
 		//color mark for start and end nodes
 		taskStartNode.setCurColor(Color.WHITE);
 		taskEndNode.setCurColor(Color.BLACK);
@@ -507,7 +650,7 @@ System.out.println("++sWay: " + sWay);
 		for(GraphNode n : nodes) {
 			n.setCurColor(Color.BLUE);
 		}
-		for(GraphLine l : lines) {
+		for(GraphLine l : linesRecover) {
 			l.setCurColor(l.getFirstColor());
 		}
 		//return IDs
@@ -553,7 +696,6 @@ System.out.println("++sWay: " + sWay);
 					}
 				}
 				//coloring current node
-//System.out.println("curNode: " + curNode.getID());
 				curNode.setCurColor(curNode.getSecondColor());
 				sleepAndRepaint(300);
 				//check distances of neighbors of current node
@@ -567,19 +709,15 @@ System.out.println("++sWay: " + sWay);
 					//if found neighbor
 					if(nbor != null) {
 						//coloring current line
-//System.out.println("--neighbor: " + nbor.getID());
 						line.setCurColor(line.getSecondColor());
 						sleepAndRepaint(300);
 						//check distance
 						int curNborDist = Integer.parseInt(nbor.getID());
 						if(curNodeDist + line.getID() < curNborDist) {
 							nbor.setID(String.valueOf(curNodeDist + line.getID()));
-//System.out.println("--his new ID: " + nbor.getID());
 							stepMap.replace(nbor,
 									new ArrayList<GraphLine>(stepMap.get(curNode)));
 							stepMap.get(nbor).add(line);
-System.out.println("stepMap of " + nodesIDes[nodes.indexOf(nbor)]);
-for(GraphLine l:stepMap.get(nbor)) System.out.println("	-" + l.getID());
 							sleepAndRepaint(300);
 						}
 						nbor = null;
@@ -598,16 +736,16 @@ for(GraphLine l:stepMap.get(nbor)) System.out.println("	-" + l.getID());
 				if(!goOn)
 					break;
 				//mark (+coloring) current node as stepped
-//System.out.println("--curNode: " + curNode.getID());
 				notStepped.remove(curNode);
 				curNode.setCurColor(Color.MAGENTA);
 				sleepAndRepaint(500);
 			}
 		} catch(NumberFormatException ex) {
-			ex.printStackTrace();
+			JOptionPane.showMessageDialog(null,
+					"Bad distance of nodes",
+					"Error!",
+					JOptionPane.ERROR_MESSAGE);
 		}
-System.out.println("stepMap of taskEndNode " + nodesIDes[nodes.indexOf(taskEndNode)]);
-for(GraphLine l:stepMap.get(taskEndNode)) System.out.println("	-" + l.getID());
 		if(taskEndNode.getID().equals(String.valueOf(Integer.MAX_VALUE)))
 			return null;
 		return stepMap;
@@ -618,7 +756,10 @@ for(GraphLine l:stepMap.get(taskEndNode)) System.out.println("	-" + l.getID());
 			drawPanel.paint(drawPanel.getGraphics());
 			Thread.sleep((long)(time/speedCoef));
 		} catch (InterruptedException ie) {
-			ie.printStackTrace();
+			JOptionPane.showMessageDialog(null,
+					"Bad time pause",
+					"Error!",
+					JOptionPane.ERROR_MESSAGE);
 		}
 	}
 	
@@ -658,7 +799,6 @@ for(GraphLine l:stepMap.get(taskEndNode)) System.out.println("	-" + l.getID());
 		public void actionPerformed(ActionEvent ev) {
 			JButton cur = (JButton) ev.getSource();
 			curOperation = cur.getName();
-System.out.println(curOperation);
 			firstLineNode = null;
 		}
 	}
@@ -711,7 +851,6 @@ System.out.println(curOperation);
 		}
 			
 	    public void mouseClicked(MouseEvent e) {
-			//System.out.println("click on " + e.getX() + "," + e.getY());
 	    	if(curOperation.equals("node")) {
 	    		GraphNode n = new GraphNode(e.getX(),e.getY(), GraphEditorGUI.this);
 				nodes.add(n);
@@ -732,7 +871,6 @@ System.out.println(curOperation);
 	    		Point clickedPoint = new Point(e.getX(),e.getY());
 	    		GraphLine newSelectedLine = findLineForPoint(clickedPoint);
 	    		if(newSelectedLine != null) {
-System.out.println("select line");
 	    			selectedLine = newSelectedLine;
 	    			selectedLine.setCurColor(selectedLine.getSecondColor());
 	    		}
