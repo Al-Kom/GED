@@ -1,3 +1,5 @@
 /GraphEditorGUI$TaskGetDistanceMenuListener.class
 /GraphEditorGUI.class
 /GraphSaver.class
+/GraphLoader.class
+/GraphLoader$GraphXMLHandler.class

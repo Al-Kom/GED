@@ -124,30 +124,11 @@ public class GraphEditorGUI {
 		public void actionPerformed(ActionEvent e) {
 			JFileChooser fileSaveDialog = new JFileChooser();
 			fileSaveDialog.showSaveDialog(frame);
-			saveGraphToFile(fileSaveDialog.getSelectedFile());
-		}
-	}
-	
-	private void saveGraphToFile(File file) {
-		try {
-			BufferedWriter writer = new BufferedWriter(new FileWriter(file + ".txt"));
-			writer.write(nodes.size() + " nodes, " + lines.size() + " lines\n");
-			writer.write("nodes:\n");
-			for(GraphNode n : nodes) {
-				writer.write(n.getX() + "," + n.getY() + "," + n.getID() + "\n");
+			File file = fileSaveDialog.getSelectedFile();
+			if(file != null) {
+				GraphSaver saver = new GraphSaver(file);
+				saver.saveGraph(nodes, lines);
 			}
-			writer.write("lines:\n");
-			for(GraphLine l : lines) {
-				writer.write(l.first.getX() + "," + l.first.getY() + ",");
-				writer.write(l.second.getX() + "," + l.second.getY() + ",");
-				writer.write(l.getID() + "\n");
-			}
-			writer.close();
-		} catch (IOException ex) {
-			JOptionPane.showMessageDialog(null,
-					"Can't save to file:\n" + file.getPath(),
-					"Error!",
-					JOptionPane.ERROR_MESSAGE);
 		}
 	}
 	
@@ -155,77 +136,16 @@ public class GraphEditorGUI {
 		public void actionPerformed(ActionEvent e) {
 			JFileChooser fileOpenDialog = new JFileChooser();
 			fileOpenDialog.showOpenDialog(frame);
-			openGraphFromFile(fileOpenDialog.getSelectedFile());
-		}
-	}
-	
-	private void openGraphFromFile(File file) {
-		clearGraphMemory();
-		try {
-			BufferedReader reader = new BufferedReader( new FileReader(file));
-			String line=null;
-			while(!(line = reader.readLine()).equals("nodes:"));
-			while(!(line = reader.readLine()).equals("lines:")) {
-				String[] nodeParams = line.split(",");
-				GraphNode b = new GraphNode(Integer.parseInt(nodeParams[0]),
-											Integer.parseInt(nodeParams[1]),
-											GraphEditorGUI.this);
-				if(nodeParams.length>2) {
-					b.setID(nodeParams[2]);
+			File file = fileOpenDialog.getSelectedFile();
+			if(file != null) {
+				clearGraphMemory();
+				GraphLoader loader = new GraphLoader(file);
+				loader.loadGraph(GraphEditorGUI.this);
+				for(GraphNode node:nodes) {
+					drawPanel.add(node);
 				}
-				nodes.add(b);
-				drawPanel.add(b);
+				drawPanel.paint(drawPanel.getGraphics());
 			}
-			while((line = reader.readLine()) != null) {
-				String[] lineParams = line.split(",");
-				int coords[] = new int[5];
-				for(int i = 0; i < 4; i++) {
-					coords[i] = Integer.parseInt(lineParams[i]);
-				}
-				GraphNode n1 = null;
-				GraphNode n2 = null;
-				for(GraphNode n : nodes) {
-					if((n.getX() ==  coords[0]) && (n.getY() == coords[1])) {
-						n1 = n;
-					}
-					if((n.getX() == coords[2]) && (n.getY() == coords[3])) {
-						n2 = n;
-					}
-				}
-				if(n1 == null) {
-					throw new Exception("Bad coordinates for first node of line: "
-													+ coords[0] + "," + coords[1]);
-				}
-				if(n2 == null) {
-					throw new Exception("Bad coordinates for first node of line: "
-													+ coords[2] + "," + coords[3]);
-				}
-				GraphLine l = new GraphLine(n1, n2);
-				if(lineParams.length>4) {
-					l.setID(Integer.parseInt(lineParams[4]));
-				}
-				lines.add(l);
-			}
-			reader.close();
-			drawPanel.repaint();
-			for(GraphNode n : nodes) {
-				n.repaint();
-			}
-		} catch (IOException ex) {
-			JOptionPane.showMessageDialog(null,
-					"Can't load from file:\n" + file.getPath(),
-					"Error!",
-					JOptionPane.ERROR_MESSAGE);
-		} catch (NumberFormatException ex) {
-			JOptionPane.showMessageDialog(null,
-					"Bad coordinate in file:\n" + file.getPath(),
-					"Error!",
-					JOptionPane.ERROR_MESSAGE);
-		} catch (Exception ex) {
-			JOptionPane.showMessageDialog(null,
-					ex.getLocalizedMessage(),
-					"Error!",
-					JOptionPane.ERROR_MESSAGE);
 		}
 	}
 	
@@ -609,7 +529,6 @@ public class GraphEditorGUI {
 		return badGuys;
 	}
 	
-
 	private boolean isEvenOrAlone(GraphNode node) {
 		int edgeNumber = 0;
 		for(GraphLine line:lines) {
