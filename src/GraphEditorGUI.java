@@ -337,7 +337,7 @@ public class GraphEditorGUI {
 		//prepare graph and store IDs
 		nodesIDes = prepareGraphToTaskAndStoreNodesIDs();
 		//store lines
-		ArrayList<GraphLine> linesRecover = (ArrayList<GraphLine>)lines.clone();
+		ArrayList<GraphLine> linesRecover = new ArrayList<GraphLine>(lines);
 		//enter algorithm
 		Map<GraphNode,ArrayList<GraphLine>> stepMap;
 		while((stepMap = minimizeNeighborDistance(new ArrayList<GraphNode>(nodes)))
@@ -464,7 +464,7 @@ public class GraphEditorGUI {
 
 	private void findAllCycles(GraphNode node, ArrayList<GraphNode> answerList) {
 		ArrayList<GraphNode> cycle = findCycle(node);
-		if(cycle.size() == 0) {
+		if(cycle.size() < 3) {
 			return;
 		} else {
 			answerList.addAll(answerList.indexOf(node), cycle);
@@ -522,33 +522,23 @@ public class GraphEditorGUI {
 	private ArrayList<GraphNode> findNonEvenNodes() {
 		ArrayList<GraphNode> badGuys = new ArrayList<GraphNode>();
 		for(GraphNode node:nodes) {
-			if(!isEvenOrAlone(node)) {
+			if(isNonEvenOrAlone(node)) {
 				badGuys.add(node);
 			}
 		}
 		return badGuys;
 	}
 	
-	private boolean isEvenOrAlone(GraphNode node) {
+	private boolean isNonEvenOrAlone(GraphNode node) {
 		int edgeNumber = 0;
 		for(GraphLine line:lines) {
 			if(line.first.equals(node) || line.second.equals(node))
 				edgeNumber++;
 		}
-		if(edgeNumber%2 == 0 && edgeNumber != 0)
+		if(edgeNumber%2 == 1 || edgeNumber == 0)
 			return true;
 		else
 			return false;
-	}
-
-	private void cutNodeWithEdges(GraphNode node) {
-		for(int i = 0; i < lines.size(); i++) {
-			if(lines.get(i).first.equals(node) || lines.get(i).second.equals(node)) {
-				lines.remove(lines.get(i));
-				i--;	//go a step back after removing the element we stay on 
-			}
-		}
-		nodes.remove(node);
 	}
 	
  	private String[] prepareGraphToTaskAndStoreNodesIDs() {
